@@ -1,0 +1,19 @@
+Forest Sharp
+
+SharpFC
+
+My protocol is dumbfoundedly simple. 
+
+When attempting to connect, a client prefers to join half-full groups
+
+After establishing a connection to a new or half-full (1/2) Group, the second player to connect always goes first
+
+The only message type during "GamePlay" is in the form of two numbers,separated by a space, representing the Row and Column of the play
+
+"MSG,<ROW> <COL>"
+
+Before sending this message, the client verifies two things
+1. That it is its own turn (boolean bIsMyTurn)
+
+2. That the play value is not already taken
+
