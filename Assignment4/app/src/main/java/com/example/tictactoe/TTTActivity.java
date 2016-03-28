@@ -597,16 +597,19 @@ public class TTTActivity extends ActionBarActivity {
                 Toast.makeText(getApplicationContext(), "YOU WIN!", Toast.LENGTH_SHORT).show();
 
                 SendPlay(row,col); //Send the winning move to the opponent
-
-                QuitGame();
-
             }
             else if (Winner == 2) //YOU LOSE
             {
                 Toast.makeText(getApplicationContext(), "YOU LOSE.", Toast.LENGTH_SHORT).show();
-
-                QuitGame();
             }
+            else if (Winner == 3)
+            {
+                Toast.makeText(getApplicationContext(), "IT'S A DRAW!", Toast.LENGTH_SHORT).show();
+                SendPlay(row,col);
+            }
+
+            QuitGame();
+            return;
         }
 
         //Update our board w/ X and Send to Opponent if bMyPlay
@@ -664,6 +667,22 @@ public class TTTActivity extends ActionBarActivity {
         {
             winner = BoardState[0][2];
         }
+        else //Check for Draw
+        {
+            //Draw is 3 (if no win, default to draw)
+            winner = 3;
+            for (int[] row: BoardState)
+            {
+                for (int v : row)
+                {
+                    if (v==0)
+                    {
+                        winner = 0; //Board is not full
+                        break;
+                    }
+                }
+            }
+        }
 
         return winner;
     }
@@ -674,6 +693,7 @@ public class TTTActivity extends ActionBarActivity {
         //Leave the group
         send("QUIT," + MyGroup);
 
+        //Reset Game Board
         for (Button[] row: board)
         {
             for (Button b: row)
@@ -682,7 +702,7 @@ public class TTTActivity extends ActionBarActivity {
             }
         }
 
-        //Reinitialize Board
+        //Reset Game State
         for (int[] row: BoardState)
         {
             Arrays.fill(row,0);
@@ -690,5 +710,7 @@ public class TTTActivity extends ActionBarActivity {
 
         //Attempt to reconnect to a new game
         ListGroups();
+
+
     }
 }
