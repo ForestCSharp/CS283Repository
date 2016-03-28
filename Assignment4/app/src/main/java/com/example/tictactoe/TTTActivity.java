@@ -6,6 +6,9 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -25,7 +28,7 @@ public class TTTActivity extends ActionBarActivity {
 
     // server to connect to
     protected static final int GROUPCAST_PORT = 20000;
-    protected static final String GROUPCAST_SERVER = "cs283.hopto.org";
+    protected static final String GROUPCAST_SERVER = "ec2-54-165-202-12.compute-1.amazonaws.com";
 
     // networking
     Socket socket = null;
@@ -37,6 +40,14 @@ public class TTTActivity extends ActionBarActivity {
     Button board[][] = new Button[3][3];
     Button bConnect = null;
     EditText etName = null;
+
+    //MY Gameplay/Networking Data structures and Variables
+    List<String> GroupNames;
+    String MyGroup = new String();
+    boolean bIsMyTurn;
+
+    //Game State (0 is empty, 1 is this client, 2 is opponent)
+    int BoardState[][] = new int[3][3];
 
 
     @Override
@@ -78,6 +89,7 @@ public class TTTActivity extends ActionBarActivity {
                             Toast.LENGTH_SHORT).show();
                 } else {
                     send("NAME,"+etName.getText());
+                    ListGroups();
                 }
             }
         });
@@ -88,25 +100,63 @@ public class TTTActivity extends ActionBarActivity {
 
             @Override
             public void onClick(View v) {
-                int x, y;
-                switch (v.getId()) {
-                    case R.id.b00:
-                        x = 0;
-                        y = 0;
+                int x=-1;
+                int y= -1;
 
-                        // TODO: what do we do if the user clicked field (0,0)?
-                        break;
-                    case R.id.b01:
-                        x = 0;
-                        y = 1;
+                if (bIsMyTurn) //Only Handle Button Input if it is your turn
+                {
 
-                        // TODO: what do we do if the user clicked field (0,1)?
-                        break;
+                    switch (v.getId()) {
+                        case R.id.b00:
+                            x = 0;
+                            y = 0;
+                            break;
+                        case R.id.b01:
+                            x = 0;
+                            y = 1;
+                            break;
 
-                    // [ ... and so on for the other buttons ]
+                        case R.id.b02:
+                            x= 0;
+                            y=2;
+                            break;
 
-                    default:
-                        break;
+                        case R.id.b10:
+                            x=1;
+                            y=0;
+                            break;
+
+                        case R.id.b11:
+                            x=1;
+                            y=1;
+                            break;
+
+                        case R.id.b12:
+                            x=1;
+                            y=2;
+                            break;
+
+                        case R.id.b20:
+                            x=2;
+                            y=0;
+                            break;
+
+                        case R.id.b21:
+                            x=2;
+                            y=1;
+                            break;
+
+                        case R.id.b22:
+                            x=2;
+                            y=2;
+                            break;
+
+                        default:
+                            break;
+                    }
+
+                    //Actually Play your turn
+                    PlayTurn(true, x, y);
                 }
             }
         };
@@ -280,7 +330,41 @@ public class TTTActivity extends ActionBarActivity {
                     return;
                 }
 
-                // [ ... and so on for other kinds of messages]
+                //List of Groups returned
+                if (msg.startsWith("+OK,LIST,GROUPS:"))
+                {
+                    //Process group names and store as a list of strings
+                   // Toast.makeText(getApplicationContext(),
+                        //    msg.substring("+OK,LIST,GROUPS:".length()),
+                          //  Toast.LENGTH_SHORT).show();
+
+                    //Parse Groups
+                    String delims = "[,]+";
+                    String[] tokens = msg.substring("+OK,LIST,GROUPS:".length()).split(delims);
+
+                    GroupNames = Arrays.asList(tokens);
+
+                    JoinGroup();
+
+
+                    return;
+
+                }
+
+                //Handle Gameplay messages
+                if (msg.startsWith("+MSG"))
+                {
+                    //Received message of Format "+MSG,<NAME>,<GROUP>,<BODY>"
+                    //So we need element 3 of the tokens array
+                    String delims = "[,]+";
+                    String[] tokens = msg.split(delims);
+
+                    //Parse body to get move
+                    String body = tokens[3];
+                    Toast.makeText(getApplicationContext(), body, Toast.LENGTH_SHORT).show();
+
+
+                }
 
 
                 // if we haven't returned yet, tell the user that we have an unhandled message
@@ -422,5 +506,158 @@ public class TTTActivity extends ActionBarActivity {
                 board[x][y].setEnabled(false);
     }
 
+    //My Methods
+
+    //Searches for a group from the list of groups on the server
+    //Preference for (1/2) groups, but will join/create a (0/2) group if necessary
+    void ListGroups()
+    {
+        //Send request to list groups, which attempts to join
+        send("LIST,GROUPS");
+
+
+    }
+
+    //Attempts to join (1/2) group, only creating a new group if (1/2) does not exist
+    //(REMINDER: EMPTY GROUPS ARE DESTROYED BY GROUPCAST)
+    void JoinGroup()
+    {
+        String half_full = "(1/2)";
+
+        List<String> HalfFullGroups = new LinkedList<String>();
+
+        //Process List of Groups, find (1/2) groups and (0/2) groups
+        for (String Group : GroupNames)
+        {
+            Toast.makeText(getApplicationContext(), Group,Toast.LENGTH_SHORT).show();
+            if (Group.contains(half_full))
+            {
+                HalfFullGroups.add(Group.replace(half_full, ""));
+            }
+        }
+
+        //Try to join 1/2 group
+        if (!HalfFullGroups.isEmpty())
+        {
+            Toast.makeText(getApplicationContext(), HalfFullGroups.get(0),Toast.LENGTH_SHORT).show();
+
+            //Join first half-full group
+            send("JOIN," + HalfFullGroups.get(0));
+            MyGroup = HalfFullGroups.get(0);
+            //Play game as second player (Play first move)
+            bIsMyTurn = true;
+        }
+        else //Create and Join a new group
+        {
+            int GroupNum = GroupNames.size();
+
+            //Create new group, with group number = size of Total number of groups
+            send("JOIN,@group"+ GroupNum +",2");
+            MyGroup = "@group"+ GroupNum;
+            //Play game as first player (Wait on First move)
+            bIsMyTurn = false;
+        }
+
+    }
+
+    //Handles input to board, and checks for completion conditions,
+    // then sends turn to opponent if bMyPlay
+    void PlayTurn(boolean bMyPlay, int row, int col)
+    {
+        int boardVal = (bMyPlay) ? 1 : 2;
+
+        if (BoardState[row][col] == 0)
+        {
+            BoardState[row][col] = boardVal;
+        }
+        else //Handle Invalid Input (This should only occur on sending Client side)
+        {
+
+        }
+
+        //Check for win conditions (8 conditions to check)
+
+
+        //Update our board w/ X and Send to Opponent if bMyPlay
+        if (bMyPlay)
+        {
+            SetButton(1,row,col);
+            SendPlay(row,col);
+            bIsMyTurn = false;
+        }
+        else //Otherwise, update our board w/ O
+        {
+            SetButton(2,row,col);
+            bIsMyTurn = true;
+        }
+    }
+
+    //Sends play as MSG
+    void SendPlay(int row, int col)
+    {
+        send("MSG," + MyGroup + "," + row + " " + col );
+    }
+
+    //Sets button with X, O, or blank
+    void SetButton(int val, int row, int col)
+    {
+        Button button = (Button) findViewById(R.id.b00);
+
+        if (row == 0)
+        {
+            if (col == 0)
+            {
+                button = (Button) findViewById(R.id.b00);
+            }
+            else if (col == 1)
+            {
+                button = (Button) findViewById(R.id.b01);
+            }
+            else if (col ==2)
+            {
+                button = (Button) findViewById(R.id.b02);
+            }
+        }
+        else if (row == 1)
+        {
+            if (col == 0)
+            {
+                button = (Button) findViewById(R.id.b10);
+            }
+            else if (col == 1)
+            {
+                button = (Button) findViewById(R.id.b11);
+            }
+            else if (col ==2)
+            {
+                button = (Button) findViewById(R.id.b12);
+            }
+        }
+        else if (row == 2)
+        {
+            if (col == 0)
+            {
+                button = (Button) findViewById(R.id.b20);
+            }
+            else if (col == 1)
+            {
+                button = (Button) findViewById(R.id.b21);
+            }
+            else if (col ==2)
+            {
+                button = (Button) findViewById(R.id.b22);
+            }
+        }
+
+        if (val == 1)
+        {
+            button.setText("X");
+        }
+        else if (val == 2)
+        {
+            button.setText("O");
+        }
+
+    }
 
 }
