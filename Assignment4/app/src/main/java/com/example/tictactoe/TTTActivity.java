@@ -72,7 +72,7 @@ public class TTTActivity extends ActionBarActivity {
         hideLoginControls();
 
         // make the board non-clickable
-        disableBoardClick();
+        //disableBoardClick();
 
         // hide the board
         hideBoard();
@@ -105,7 +105,6 @@ public class TTTActivity extends ActionBarActivity {
 
                 if (bIsMyTurn) //Only Handle Button Input if it is your turn
                 {
-
                     switch (v.getId()) {
                         case R.id.b00:
                             x = 0;
@@ -322,6 +321,7 @@ public class TTTActivity extends ActionBarActivity {
                 if(msg.startsWith("+OK,NAME")) {
                     hideLoginControls();
                     showBoard();
+
                     return;
                 }
 
@@ -361,14 +361,21 @@ public class TTTActivity extends ActionBarActivity {
 
                     //Parse body to get move
                     String body = tokens[3];
-                    Toast.makeText(getApplicationContext(), body, Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(getApplicationContext(), body, Toast.LENGTH_SHORT).show();
+
+                    String spaceDelim = "[ ]+";
+                    String[] coords = body.split(spaceDelim);
+                    int row = Integer.parseInt(coords[0]);
+                    int col = Integer.parseInt(coords[1]);
+
+                    PlayTurn(false, row, col);
 
 
                 }
 
 
                 // if we haven't returned yet, tell the user that we have an unhandled message
-                Toast.makeText(getApplicationContext(), "Unhandled message: "+msg, Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getApplicationContext(), "Unhandled message: "+msg, Toast.LENGTH_SHORT).show();
             }
 
         }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
@@ -426,9 +433,9 @@ public class TTTActivity extends ActionBarActivity {
             @Override
             protected void onPostExecute(Boolean error) {
                 if (!error) {
-                    Toast.makeText(getApplicationContext(),
-                            "Message sent to server", Toast.LENGTH_SHORT)
-                            .show();
+                    //Toast.makeText(getApplicationContext(),
+                            //"Message sent to server", Toast.LENGTH_SHORT)
+                           // .show();
                 } else {
                     Toast.makeText(getApplicationContext(),
                             "Error sending message to server",
@@ -529,7 +536,7 @@ public class TTTActivity extends ActionBarActivity {
         //Process List of Groups, find (1/2) groups and (0/2) groups
         for (String Group : GroupNames)
         {
-            Toast.makeText(getApplicationContext(), Group,Toast.LENGTH_SHORT).show();
+            //Toast.makeText(getApplicationContext(), Group,Toast.LENGTH_SHORT).show();
             if (Group.contains(half_full))
             {
                 HalfFullGroups.add(Group.replace(half_full, ""));
@@ -539,7 +546,7 @@ public class TTTActivity extends ActionBarActivity {
         //Try to join 1/2 group
         if (!HalfFullGroups.isEmpty())
         {
-            Toast.makeText(getApplicationContext(), HalfFullGroups.get(0),Toast.LENGTH_SHORT).show();
+            //Toast.makeText(getApplicationContext(), HalfFullGroups.get(0),Toast.LENGTH_SHORT).show();
 
             //Join first half-full group
             send("JOIN," + HalfFullGroups.get(0));
@@ -570,13 +577,34 @@ public class TTTActivity extends ActionBarActivity {
         {
             BoardState[row][col] = boardVal;
         }
-        else //Handle Invalid Input (This should only occur on sending Client side)
+        else if (bMyPlay) //Handle Invalid Input (This should only occur on sending Client side)
         {
-
+            //Send toast to notify error
+            Toast.makeText(getApplicationContext(), "Position already taken", Toast.LENGTH_SHORT).show();
+            return;
         }
 
         //Check for win conditions (8 conditions to check)
+        int Winner = CheckForWinner();
+        if ( Winner != 0)
+        {
+            //End Game
+            if (Winner == 1) //YOU WIN
+            {
+                Toast.makeText(getApplicationContext(), "YOU WIN!", Toast.LENGTH_SHORT).show();
 
+                SendPlay(row,col); //Send the winning move to the opponent
+
+                QuitGame();
+
+            }
+            else if (Winner == 2) //YOU LOSE
+            {
+                Toast.makeText(getApplicationContext(), "YOU LOSE.", Toast.LENGTH_SHORT).show();
+
+                QuitGame();
+            }
+        }
 
         //Update our board w/ X and Send to Opponent if bMyPlay
         if (bMyPlay)
@@ -660,4 +688,52 @@ public class TTTActivity extends ActionBarActivity {
 
     }
 
+    int CheckForWinner()
+    {
+        int winner = 0;
+        if (BoardState[0][0] != 0 && BoardState[0][0] == BoardState[0][1] && BoardState[0][1] == BoardState[0][2])
+        {
+            winner = BoardState[0][0];
+        }
+        else if (BoardState[1][0] != 0 && BoardState[1][0] == BoardState[1][1] && BoardState[1][1] == BoardState[1][2])
+        {
+            winner = BoardState[1][0];
+        }
+        else if (BoardState[2][0] != 0 && BoardState[2][0] == BoardState[2][1] && BoardState[2][1] == BoardState[2][2])
+        {
+            winner = BoardState[2][0];
+        }
+        else if (BoardState[0][0] != 0 && BoardState[0][0] == BoardState[1][0] && BoardState[1][0] == BoardState[2][0])
+        {
+            winner = BoardState[0][0];
+        }
+        else if (BoardState[0][1] != 0 && BoardState[0][1] == BoardState[1][1] && BoardState[1][1] == BoardState[2][1])
+        {
+            winner = BoardState[0][1];
+        }
+        else if (BoardState[0][2] != 0 && BoardState[0][2] == BoardState[1][2] && BoardState[1][2] == BoardState[2][2])
+        {
+            winner = BoardState[0][2];
+        }
+        else if (BoardState[0][0] != 0 && BoardState[0][0] == BoardState[1][1] && BoardState[1][1] == BoardState[2][2])
+        {
+            winner = BoardState[0][0];
+        }
+        else if (BoardState[0][2] != 0 && BoardState[0][2] == BoardState[1][1] && BoardState[1][1] == BoardState[2][0])
+        {
+            winner = BoardState[0][2];
+        }
+
+        return winner;
+    }
+
+    //Leaves group,
+    void QuitGame()
+    {
+        //Leave the group
+        send("QUIT," + MyGroup);
+
+        showLoginControls();
+        hideBoard();
+    }
 }
