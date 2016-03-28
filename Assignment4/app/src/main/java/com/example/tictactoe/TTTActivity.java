@@ -559,11 +559,14 @@ public class TTTActivity extends ActionBarActivity {
             int GroupNum = GroupNames.size();
 
             //Create new group, with group number = size of Total number of groups
-            send("JOIN,@group"+ GroupNum +",2");
+            send("JOIN,@group" + GroupNum + ",2");
             MyGroup = "@group"+ GroupNum;
+
             //Play game as first player (Wait on First move)
             bIsMyTurn = false;
         }
+
+        Toast.makeText(getApplicationContext(), "Joined Group: " + MyGroup, Toast.LENGTH_SHORT).show();
 
     }
 
@@ -609,13 +612,13 @@ public class TTTActivity extends ActionBarActivity {
         //Update our board w/ X and Send to Opponent if bMyPlay
         if (bMyPlay)
         {
-            SetButton(1,row,col);
+            board[row][col].setText("X");
             SendPlay(row,col);
             bIsMyTurn = false;
         }
         else //Otherwise, update our board w/ O
         {
-            SetButton(2,row,col);
+            board[row][col].setText("O");
             bIsMyTurn = true;
         }
     }
@@ -624,68 +627,6 @@ public class TTTActivity extends ActionBarActivity {
     void SendPlay(int row, int col)
     {
         send("MSG," + MyGroup + "," + row + " " + col );
-    }
-
-    //Sets button with X, O, or blank
-    void SetButton(int val, int row, int col)
-    {
-        Button button = (Button) findViewById(R.id.b00);
-
-        if (row == 0)
-        {
-            if (col == 0)
-            {
-                button = (Button) findViewById(R.id.b00);
-            }
-            else if (col == 1)
-            {
-                button = (Button) findViewById(R.id.b01);
-            }
-            else if (col ==2)
-            {
-                button = (Button) findViewById(R.id.b02);
-            }
-        }
-        else if (row == 1)
-        {
-            if (col == 0)
-            {
-                button = (Button) findViewById(R.id.b10);
-            }
-            else if (col == 1)
-            {
-                button = (Button) findViewById(R.id.b11);
-            }
-            else if (col ==2)
-            {
-                button = (Button) findViewById(R.id.b12);
-            }
-        }
-        else if (row == 2)
-        {
-            if (col == 0)
-            {
-                button = (Button) findViewById(R.id.b20);
-            }
-            else if (col == 1)
-            {
-                button = (Button) findViewById(R.id.b21);
-            }
-            else if (col ==2)
-            {
-                button = (Button) findViewById(R.id.b22);
-            }
-        }
-
-        if (val == 1)
-        {
-            button.setText("X");
-        }
-        else if (val == 2)
-        {
-            button.setText("O");
-        }
-
     }
 
     int CheckForWinner()
@@ -733,7 +674,21 @@ public class TTTActivity extends ActionBarActivity {
         //Leave the group
         send("QUIT," + MyGroup);
 
-        showLoginControls();
-        hideBoard();
+        for (Button[] row: board)
+        {
+            for (Button b: row)
+            {
+                b.setText("");
+            }
+        }
+
+        //Reinitialize Board
+        for (int[] row: BoardState)
+        {
+            Arrays.fill(row,0);
+        }
+
+        //Attempt to reconnect to a new game
+        ListGroups();
     }
 }
