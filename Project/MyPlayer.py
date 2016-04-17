@@ -66,7 +66,9 @@ class MyPlayer:
             self.Actor.setPos(self.Actor.getPos() + self.render.getRelativeVector(self.Actor,Vec3(0,1,0)) * 50)
             self.bHasMoved = True
 
-        #if self.bHasMoved:
+        if self.bHasMoved:
+            print self.Actor.getPos()
+            print self.Actor.getHpr()
             #TODO: Send Move Update Packet
 
 
