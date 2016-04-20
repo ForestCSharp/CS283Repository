@@ -9,25 +9,28 @@ class P2PConnection:
     OP_DESTROYED = "OP_DES" #FORMAT: "OP_DES"
 
     def __init__(self):
-        self.IPs = ['127.0.0.1']
-        self.Ports = [5000]
+        self.myIP = '127.0.0.1'
+        self.myPort = 5005
+        self.dstIP = '127.0.0.1'
+        self.dstPort = 5005
         self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.bind(("", port))
-        print "waiting on port:", port
-        #self.ConnectionLoop
+        #self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        #self.s.bind((self.dstIP, self.dstPort)) #bind to opponent
+        #self.ConnectionLoop()
 
     #establishes connection to IP and Port and begins connection loop
-    def EstablishConnection(IP, Port):
-        self.IPs.append(IP)
-        self.IPs.append(Port)
-
-    #clears connections
-    def ClearConnections():
-        self.IPs = []
-        self.Ports = []
+    def SetConnection(IP, Port):
+        print "Establishing Connection"
 
 
-    def ConnectionLoop():
-        while 1:
-            data, addr = s.recvfrom(1024)
+
+    #Receives opponent Packets
+    def ConnectionLoop(self):
+        while True:
+            data, addr = self.s.recvfrom(1024)
             print data
+
+    #Sends Packets about our own state
+    def SendMessage(self,MSG):
+        print "Sending " + MSG
+        self.s.sendto(MSG, (self.dstIP, self.dstPort))
