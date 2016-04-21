@@ -1,4 +1,6 @@
 import socket
+import thread
+from direct.task import Task
 
 #Represents our Peer-to-Peer Connection
 #1: Responsible for sending mesages about our player to other players
@@ -14,15 +16,18 @@ class P2PConnection:
         self.dstIP = '127.0.0.1'
         self.dstPort = 5005
         self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        #self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        #self.s.bind((self.dstIP, self.dstPort)) #bind to opponent
+
+        self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+        self.s.bind((self.dstIP, self.dstPort)) #bind to opponent
+        thread.start_new_thread(self.ConnectionLoop, ())
         #self.ConnectionLoop()
 
     #establishes connection to IP and Port and begins connection loop
     def SetConnection(IP, Port):
         print "Establishing Connection"
-
-
+        self.dstIP = IP
+        self.dstPort = Port
 
     #Receives opponent Packets
     def ConnectionLoop(self):
