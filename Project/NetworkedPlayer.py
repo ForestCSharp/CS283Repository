@@ -1,5 +1,5 @@
 from direct.actor.Actor import Actor
-from panda3d.core import PandaNode, NodePath, Camera, TextNode
+from panda3d.core import *
 
 #A player who communicates across the network
 class NetworkedPlayer:
@@ -16,3 +16,8 @@ class NetworkedPlayer:
         self.Actor.reparentTo(app.render)
         # Loop its animation.
         self.Actor.loop("walk")
+
+    def SetPosition(self,X,Y,Z,H,P,R):
+        print "Setting Pos"
+        self.Actor.setPos(Vec3(X,Y,Z))
+        self.Actor.setHpr(Vec3(H,P,R))

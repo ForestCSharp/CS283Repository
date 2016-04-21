@@ -5,14 +5,14 @@ import sys
 
 class MyPlayer:
 
-    def __init__(self):
+    def __init__(self, Connection):
         self.SetModel("")
 
         self.keyMap = {
             "left": 0, "right": 0, "forward": 0, "back": 0}
 
         self.render = 0
-        self.bHasMoved = False
+        self.connection = Connection
 
     #TODO: sets this actor the model set by path
     def SetModel(self, path):
@@ -51,25 +51,31 @@ class MyPlayer:
         self.keyMap[key] = value
 
     def move(self, task):
-        self.bHasMoved = False
+        bHasMoved = False
+        bAttack = False
 
         if self.keyMap["left"]:
             self.Actor.setH(self.Actor.getH() + 3.0)
-            self.bHasMoved = True
+            bHasMoved = True
         if self.keyMap["right"]:
             self.Actor.setH(self.Actor.getH() - 3.0)
-            self.bHasMoved = True
+            bHasMoved = True
         if self.keyMap["forward"]:
             self.Actor.setPos(self.Actor.getPos() - self.render.getRelativeVector(self.Actor,Vec3(0,1,0)) * 50)
-            self.bHasMoved = True
+            bHasMoved = True
         if self.keyMap["back"]:
             self.Actor.setPos(self.Actor.getPos() + self.render.getRelativeVector(self.Actor,Vec3(0,1,0)) * 50)
-            self.bHasMoved = True
+            bHasMoved = True
 
-        if self.bHasMoved:
-            print self.Actor.getPos()
-            print self.Actor.getHpr()
-            #TODO: Send Move Update Packet
+        if bHasMoved:
+            pos = self.Actor.getPos()
+            rot = self.Actor.getHpr()
+            self.connection.SendMessage(self.connection.OP_POSITION
+            + " " + str(pos.getX()) + " " + str(pos.getY()) + " " + str(pos.getZ())
+            + " " + str(rot.getX()) + " " + str(rot.getY()) + " " + str(rot.getZ()))
+
+        if bAttack:
+            print "Attack"
 
 
         return task.cont
