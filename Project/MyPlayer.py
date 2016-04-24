@@ -2,6 +2,7 @@
 from direct.actor.Actor import Actor
 from panda3d.core import *
 import sys
+from Timer import Timer
 
 class MyPlayer:
 
@@ -17,6 +18,8 @@ class MyPlayer:
         self.MyDamage = 20.0
         self.MyHealth = 100.0
         self.AttackDistance = 10.0
+        self.AttackCooldown = 0.5
+        self.AttackCooldownTimer = Timer()
 
     #TODO: sets this actor the model set by path
     def SetModel(self, path):
@@ -82,8 +85,10 @@ class MyPlayer:
             + " " + str(pos.getX()) + " " + str(pos.getY()) + " " + str(pos.getZ())
             + " " + str(rot.getX()) + " " + str(rot.getY()) + " " + str(rot.getZ()))
 
-        #Only Send Attack if close enough
-        if bAttack:
+        #Only Send Attack if close enough and not in attack cooldown (based on timer)
+        if bAttack and self.AttackCooldownTimer.GetElapsed() > self.AttackCooldown:
+            print "Attack"
+            self.AttackCooldownTimer.reset()
             distanceToOpponent = self.connection.GetDistanceToOpponent()
             if distanceToOpponent < self.AttackDistance:
                 MSG = self.connection.OP_ATTACK + " " + str(self.MyDamage)

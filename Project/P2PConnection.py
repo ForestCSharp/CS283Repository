@@ -26,12 +26,6 @@ class P2PConnection:
         self.s.bind(("", self.dstPort)) #bind to opponent
         thread.start_new_thread(self.ConnectionLoop, ())
 
-    #establishes connection to IP and Port and begins connection loop
-    def SetConnection(IP, Port):
-        print "Establishing Connection"
-        self.dstIP = IP
-        self.dstPort = Port
-
     def RegisterLocalPlayer(self, LocalPlayer):
         self.LocalPlayer = LocalPlayer
 
@@ -46,7 +40,7 @@ class P2PConnection:
 
             op = tokens.pop(0)
             if op == self.OP_POSITION:
-                print "OP_POS Received"
+                #print "OP_POS Received"
                 x = float(tokens[0])
                 y = float(tokens[1])
                 z = float(tokens[2])
@@ -57,24 +51,21 @@ class P2PConnection:
                 if ID != self.PlayerID:
                     self.Opponent.SetPosition(x,y,z,h,p,r)
             elif op == self.OP_ATTACK:
-                print "OP_ATK Received"
+                #print "OP_ATK Received"
                 ID = int(tokens[1])
                 if ID != self.PlayerID:
                     self.LocalPlayer.TakeDamage(float(tokens[0]))
             elif op == self.OP_DESTROYED:
-                print "OP_DES Received"
+                #print "OP_DES Received"
                 ID = int(tokens[0])
                 if ID != self.PlayerID:
                     print "YOU WIN!!!"
-                    self.Opponent.Actor.Hide()
+                    self.Opponent.Actor.hide()
 
-
-
-            print data
 
     #Sends Packets about our own state
     def SendMessage(self,MSG):
-        print "Sending " + MSG
+        #print "Sending " + MSG
         MSG += (" " + str(self.PlayerID))
         self.s.sendto(MSG, (self.dstIP, self.dstPort))
 
