@@ -1,6 +1,7 @@
 import socket
 import thread
 import random
+import struct
 from panda3d.core import *
 
 #Represents our Peer-to-Peer Connection and local game state
@@ -12,18 +13,18 @@ class P2PConnection:
     OP_DESTROYED = "OP_DES" #FORMAT: "OP_DES PlayerID"
 
     def __init__(self):
-        self.myIP = '127.0.0.1'
-        self.myPort = 5005
-        self.dstIP = '127.0.0.1'
-        self.dstPort = 5005
+        self.dstIP = '224.1.1.1'
+        self.dstPort = 5006
         self.PlayerID = random.randrange(0,10000000)
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        mreq = struct.pack("4sl", socket.inet_aton(self.dstIP), socket.INADDR_ANY)
+        self.s.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
-        self.s.bind((self.dstIP, self.dstPort)) #bind to opponent
+
+    def StartConnection(self):
+        self.s.bind(("", self.dstPort)) #bind to opponent
         thread.start_new_thread(self.ConnectionLoop, ())
-        #self.ConnectionLoop()
 
     #establishes connection to IP and Port and begins connection loop
     def SetConnection(IP, Port):
