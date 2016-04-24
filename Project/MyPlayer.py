@@ -9,10 +9,14 @@ class MyPlayer:
         self.SetModel("")
 
         self.keyMap = {
-            "left": 0, "right": 0, "forward": 0, "back": 0}
+            "left": 0, "right": 0, "forward": 0, "back": 0, "space": 0}
 
         self.render = 0
         self.connection = Connection
+        self.connection.RegisterLocalPlayer(self)
+        self.MyDamage = 20.0
+        self.MyHealth = 100.0
+        self.AttackDistance = 10.0
 
     #TODO: sets this actor the model set by path
     def SetModel(self, path):
@@ -43,14 +47,16 @@ class MyPlayer:
         app.accept("d-up", self.setKey, ["right", False])
         app.accept("w-up", self.setKey, ["forward", False])
         app.accept("s-up", self.setKey, ["back", False])
+        app.accept("space", self.setKey, ["space", True])
+        app.accept("space-up", self.setKey, ["space", False])
 
-        app.taskMgr.add(self.move, "moveTask")
+        app.taskMgr.add(self.HandleGameplay, "gameplayHandler")
 
 
     def setKey(self, key, value):
         self.keyMap[key] = value
 
-    def move(self, task):
+    def HandleGameplay(self, task):
         bHasMoved = False
         bAttack = False
 
@@ -66,6 +72,8 @@ class MyPlayer:
         if self.keyMap["back"]:
             self.Actor.setPos(self.Actor.getPos() + self.render.getRelativeVector(self.Actor,Vec3(0,1,0)) * 50)
             bHasMoved = True
+        if self.keyMap["space"]:
+            bAttack = True
 
         if bHasMoved:
             pos = self.Actor.getPos()
@@ -74,8 +82,20 @@ class MyPlayer:
             + " " + str(pos.getX()) + " " + str(pos.getY()) + " " + str(pos.getZ())
             + " " + str(rot.getX()) + " " + str(rot.getY()) + " " + str(rot.getZ()))
 
+        #Only Send Attack if close enough
         if bAttack:
-            print "Attack"
+            distanceToOpponent = self.connection.GetDistanceToOpponent()
+            if distanceToOpponent < self.AttackDistance:
+                MSG = self.connection.OP_ATTACK + " " + str(self.MyDamage)
+                self.connection.SendMessage(MSG)
 
 
         return task.cont
+
+    def TakeDamage(self, Dmg):
+        self.MyHealth -= Dmg
+        if self.MyHealth <= 0.0:
+            print "You Lose!"
+            MSG = self.connection.OP_DESTROYED
+            self.connection.SendMessage(MSG)
+            self.Actor.hide()

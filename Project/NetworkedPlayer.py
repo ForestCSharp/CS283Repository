@@ -4,7 +4,9 @@ from panda3d.core import *
 #A player who communicates across the network
 class NetworkedPlayer:
 
-    def __init__(self):
+    def __init__(self, Connection):
+        self.Connection = Connection
+        self.Connection.RegisterOpponent(self)
         self.SetModel("")
 
     def SetModel(self, path):
