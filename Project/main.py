@@ -31,14 +31,13 @@ class MyApp(ShowBase):
 
 
         self.camera.reparentTo(self.character.CamLoc)
-        self.camera.lookAt(self.character.Actor)
+        self.camera.lookAt(self.character.Actor.getPos())
         self.disableMouse()
 
         self.connection.StartConnection()
 
 
 
-#connection = P2PConnection()
+#connection = P2PConsnection()
 app = MyApp()
-app.useDrive()
 app.run()

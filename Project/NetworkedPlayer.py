@@ -20,6 +20,5 @@ class NetworkedPlayer:
         self.Actor.loop("walk")
 
     def SetPosition(self,X,Y,Z,H,P,R):
-        print "Setting Pos"
         self.Actor.setPos(Vec3(X,Y,Z))
         self.Actor.setHpr(Vec3(H,P,R))
